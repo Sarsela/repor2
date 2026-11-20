@@ -1,0 +1,45 @@
+- hosts: webservers
+  become: true
+  vars:
+    app_name: Hexlet
+    root_dir: /var/www/hexlet
+    nginx_port: 80
+
+  tasks:
+    - name: Create site directory
+      ansible.builtin.file:
+        path: "{{ root_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write site page
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: "{{ root_dir }}/index.html"
+        mode: "0644"
+
+    - name: Write nginx config
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        mode: "0644"
+      notify: Reload nginx config
+
+    - name: Ensure nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Apply pending handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Report that configuration has been applied
+      ansible.builtin.debug:
+        msg: "Настройка Nginx применена"
+
+  handlers:
+    - name: Reload nginx config
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
